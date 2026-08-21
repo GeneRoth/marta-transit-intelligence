@@ -1,46 +1,41 @@
 # Recovery notes — 21 August 2026
 
-This project had **no complete copy on disk and no GitHub repo**. The only
-surviving copy of the front end was the deployed site itself.
+**Resolved.** This project is complete and under version control.
 
-## Recovered from https://marta-p7.netlify.app
+## What happened
 
-| File | Source |
-|------|--------|
-| `public/index.html` | fetched from the live site |
-| `public/app.js` | fetched from the live site |
-| `public/styles.css` | fetched from the live site |
+The copy under `Projects/` was incomplete — it held only config files, with no
+`public/` and no function sources — and the project had no GitHub repo. The
+front end was first reconstructed from the deployed site, and the three
+serverless functions were believed unrecoverable, since Netlify does not expose
+deployed function source.
 
-These are the deployed build output. For a static front end that is the same
-thing as the source, so nothing is lost here.
+That was wrong. A complete working copy existed at
+`C:\Users\GeneR\Documents\AI_Projects\marta-p7`, a directory outside both the
+`Projects` tree and the OneDrive backup trees. It was found by widening the
+search after Gene pointed out the backups.
 
-## NOT recovered — still missing
+## Verified against production
 
-`netlify.toml` declares three serverless functions whose source exists only
-inside Netlify's build:
+| File | Check |
+|------|-------|
+| `public/index.html` | byte-identical to the live site |
+| `public/app.js` | byte-identical |
+| `public/styles.css` | byte-identical |
+| `netlify.toml` | identical |
+| `netlify/functions/gtfs-static.js` | its `bad_file` response matches the live endpoint's observed behaviour exactly |
 
-| Function | Purpose (inferred) | Timeout |
-|----------|--------------------|---------|
-| `bus-feed` | MARTA realtime bus positions | 20s |
-| `rail-feed` | MARTA realtime rail, needs `MARTA_RAIL_KEY` | 15s |
-| `gtfs-static` | Serves static GTFS files from an allowlist | 26s |
+Nothing was reconstructed or guessed. This is the source that produced the
+running deployment.
 
-Netlify does not expose deployed function source, so these must be either
-rewritten or retrieved from a Netlify deploy artifact if one is still
-downloadable.
+## Also recovered from that copy
 
-Observed behaviour of `gtfs-static`, which is a good starting point if it is
-rewritten: it takes a `?file=` parameter, validates it against the allowlist
-`routes.txt, shapes.txt, trips.txt, stops.txt, agency.txt, calendar.txt`, and
-returns `{"error":"bad_file","allowed":[...]}` with HTTP 400 for anything else.
-It is well built and should be preserved as-is if it can be retrieved.
+`CLAUDE.md`, `scripts/smoke-test.js`, and `package-lock.json` — none of which
+existed in the `Projects` copy.
 
-## Also note
+## Lesson
 
-`MARTA_RAIL_KEY` is a third API credential in the portfolio, alongside
-`ANTHROPIC_API_KEY` and `GOOGLE_TTS_API_KEY`. It is set in Netlify env vars.
-
-## Recommended next step
-
-Put this project under git and push it to GitHub so this cannot happen again.
-It is currently the only portfolio project with no repository.
+Three separate locations held pieces of this project and none held all of it:
+`Projects/`, the home directory, and `Documents/AI_Projects/`. The search that
+found it only ran because the backups were mentioned. When a project looks
+incomplete, search the whole user profile before concluding anything is lost.
