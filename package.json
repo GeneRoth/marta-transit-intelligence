@@ -1,0 +1,19 @@
+{
+  "name": "marta-transit-intelligence",
+  "version": "1.0.0",
+  "description": "MARTA Transit Intelligence Dashboard — P7 portfolio project",
+  "private": true,
+  "scripts": {
+    "dev": "netlify dev",
+    "deploy": "netlify deploy --prod --dir=public --functions=netlify/functions",
+    "deploy:preview": "netlify deploy --dir=public --functions=netlify/functions",
+    "smoke": "node scripts/smoke-test.js"
+  },
+  "dependencies": {
+    "gtfs-realtime-bindings": "^1.1.1",
+    "jszip": "^3.10.1"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

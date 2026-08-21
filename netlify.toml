@@ -1,0 +1,47 @@
+[build]
+  publish = "public"
+  functions = "netlify/functions"
+
+[functions]
+  node_bundler = "esbuild"
+  external_node_modules = []
+
+[functions."bus-feed"]
+  timeout = 20
+
+[functions."rail-feed"]
+  timeout = 15
+
+[functions."gtfs-static"]
+  timeout = 26
+
+[[redirects]]
+  from = "/api/bus"
+  to = "/.netlify/functions/bus-feed"
+  status = 200
+
+[[redirects]]
+  from = "/api/rail"
+  to = "/.netlify/functions/rail-feed"
+  status = 200
+
+[[redirects]]
+  from = "/api/gtfs/routes-directory"
+  to = "/.netlify/functions/gtfs-static?file=routes-directory"
+  status = 200
+
+[[redirects]]
+  from = "/api/gtfs/shape-for-route"
+  to = "/.netlify/functions/gtfs-static?file=shape-for-route"
+  status = 200
+
+[[redirects]]
+  from = "/api/gtfs/*"
+  to = "/.netlify/functions/gtfs-static?file=:splat"
+  status = 200
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "SAMEORIGIN"
+    Referrer-Policy = "strict-origin-when-cross-origin"

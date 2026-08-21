@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>MARTA Transit Intelligence — P7 · generoth.com</title>
+  <meta name="description" content="Real-time Atlanta transit intelligence dashboard: live MARTA buses, trains, rail lines, and paratransit equity analysis. Portfolio project P7." />
+
+  <link rel="preconnect" href="https://demotiles.maplibre.org" />
+  <link rel="preconnect" href="https://basemaps.cartocdn.com" />
+  <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,800&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <div class="grain"></div>
+
+  <header class="topbar">
+    <div class="brand">
+      <div class="mark">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="1.2"/><circle cx="12" cy="12" r="2.5" fill="currentColor"/><line x1="12" y1="2" x2="12" y2="5" stroke="currentColor" stroke-width="1.2"/><line x1="12" y1="19" x2="12" y2="22" stroke="currentColor" stroke-width="1.2"/><line x1="2" y1="12" x2="5" y2="12" stroke="currentColor" stroke-width="1.2"/><line x1="19" y1="12" x2="22" y2="12" stroke="currentColor" stroke-width="1.2"/></svg>
+      </div>
+      <div class="brand-text">
+        <div class="eyebrow">P7 · <a href="https://generoth.com" target="_blank" rel="noopener">generoth.com</a></div>
+        <h1>MARTA Transit <em>Intelligence</em></h1>
+      </div>
+    </div>
+
+    <div class="status-strip">
+      <div class="status-item" id="stat-trains">
+        <div class="stat-label">Trains</div>
+        <div class="stat-value"><span id="train-count">—</span></div>
+      </div>
+      <div class="status-item" id="stat-buses">
+        <div class="stat-label">Buses</div>
+        <div class="stat-value"><span id="bus-count">—</span></div>
+      </div>
+      <div class="status-item" id="stat-routes">
+        <div class="stat-label">Routes Active</div>
+        <div class="stat-value"><span id="route-count">—</span></div>
+      </div>
+      <div class="status-item countdown" id="stat-countdown">
+        <div class="stat-label">Refresh in</div>
+        <div class="stat-value"><span id="countdown">30</span><span class="unit">s</span></div>
+        <svg class="ring" viewBox="0 0 36 36" aria-hidden="true">
+          <circle cx="18" cy="18" r="15.5" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="1.5"/>
+          <circle id="ring-fg" cx="18" cy="18" r="15.5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-dasharray="97.39" stroke-dashoffset="0" transform="rotate(-90 18 18)"/>
+        </svg>
+      </div>
+    </div>
+  </header>
+
+  <div style="background:rgba(255,184,28,0.08);border-bottom:1px solid rgba(255,184,28,0.2);padding:8px 24px;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:0.04em;color:#ffb81c;text-align:center;position:relative;z-index:5;">
+    Now showing MARTA's NextGen Bus Network — 81 routes + 12 Reach zones, launched April 18, 2026.
+  </div>
+
+  <main class="layout">
+    <section class="map-pane">
+      <div id="map"></div>
+
+      <div class="legend" aria-label="Legend">
+        <div class="legend-title">Rail lines</div>
+        <div class="legend-rows">
+          <div><span class="sw" style="--c:#e4002b"></span>Red</div>
+          <div><span class="sw" style="--c:#ffb81c"></span>Gold</div>
+          <div><span class="sw" style="--c:#0057b7"></span>Blue</div>
+          <div><span class="sw" style="--c:#00a651"></span>Green</div>
+        </div>
+        <div class="legend-title" style="margin-top:10px">Vehicles</div>
+        <div class="legend-rows">
+          <div><span class="sw arrow"></span>Train (heading)</div>
+          <div><span class="sw dot"></span>Bus (click for route)</div>
+          <div><span class="sw route"></span>Selected route</div>
+        </div>
+      </div>
+
+      <div class="map-hint" id="map-hint">Click a bus to reveal its full route shape.</div>
+    </section>
+
+    <aside class="sidebar">
+      <div class="panel narrative-panel">
+        <div class="panel-head">
+          <span class="pill">Live narrative</span>
+          <span class="tick" id="narrative-tick"></span>
+        </div>
+        <p class="narrative" id="narrative-text">Warming up the network…</p>
+        <div class="narrative-sub" id="narrative-sub"></div>
+      </div>
+
+      <div class="panel equity-panel">
+        <div class="panel-head">
+          <span class="pill pill-alt">Paratransit equity</span>
+        </div>
+        <p class="lead">Paratransit (MARTA Mobility) serves ADA-eligible riders within 3/4-mile of fixed-route bus and rail service. The panel below tracks how that service area shifts across the network in real time.</p>
+        <p class="lead" style="border:1px solid rgba(255,184,28,0.2);background:rgba(255,184,28,0.04);border-radius:6px;padding:10px 12px;font-size:12.5px;"><strong style="color:var(--accent);">NextGen coverage analysis:</strong> Applying a 3/4-mile buffer to MARTA's pre- and post-launch GTFS feeds shows the fixed-route service area moved from 602 to 579 sq mi on April 18 — approximately 40.9 sq mi saw coverage end and 17.5 sq mi gained it (net −3.9%). ~4,881 residents with disabilities live in the affected tracts, though those tracts have lower baseline disability rates (9.0%) than tracts retaining coverage (11.3%). MARTA Reach's 12 on-demand zones extend service into some of the lower-density areas outside fixed-route coverage. Source: ACS DP02 × MARTA GTFS (Apr 2026).</p>
+        <div class="equity-rows">
+          <div class="equity-row">
+            <div class="equity-k">Fixed-route buses out now</div>
+            <div class="equity-v" id="eq-buses">—</div>
+          </div>
+          <div class="equity-row">
+            <div class="equity-k">Census tracts w/ active service</div>
+            <div class="equity-v" id="eq-tracts">—</div>
+          </div>
+          <div class="equity-row">
+            <div class="equity-k">Est. population inside 3/4-mi buffer</div>
+            <div class="equity-v" id="eq-pop">—</div>
+          </div>
+          <div class="equity-row">
+            <div class="equity-k">Paratransit-eligible coverage</div>
+            <div class="equity-v" id="eq-para"><span class="bar"><span id="eq-bar" style="width:0%"></span></span></div>
+          </div>
+        </div>
+        <p class="footnote">Estimates derived from live vehicle positions + ACS 5-year tract centroids. Coverage gaps concentrate in South DeKalb, South Fulton, and parts of Clayton where bus frequency is sparse. Population estimates are directional approximations based on grid-cell binning, not precise census-tract analysis. Note: MARTA Reach (12 on-demand zones launched March 2026) and MARTA Mobility paratransit vehicles are not in the GTFS-RT feed — actual transit coverage is broader than shown here.</p>
+      </div>
+
+      <div class="panel arrivals-panel">
+        <div class="panel-head">
+          <span class="pill pill-rail">Next arrivals</span>
+        </div>
+        <ul class="arrivals" id="arrivals-list">
+          <li class="skeleton">—</li>
+          <li class="skeleton">—</li>
+          <li class="skeleton">—</li>
+        </ul>
+      </div>
+
+      <footer class="foot">
+        <div>Built by <a href="https://generoth.com" target="_blank" rel="noopener">Gene Roth</a></div>
+        <div class="foot-sub">Data: MARTA GTFS-RT · static feed · Rail RESTful API</div>
+      </footer>
+    </aside>
+  </main>
+
+  <!-- How This Was Built -->
+  <div class="how-built-toggle" id="how-toggle">
+    <button onclick="document.getElementById('how-section').classList.toggle('open'); this.classList.toggle('active');" aria-label="How this was built">
+      <svg viewBox="0 0 20 20" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.062 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z"/></svg>
+      How This Was Built
+    </button>
+  </div>
+
+  <section class="how-section" id="how-section">
+    <div class="how-inner">
+
+      <div class="how-block">
+        <h3>Real-Time Data Orchestration</h3>
+        <p>Architected as a <strong>three-layer serverless proxy system</strong> — each Netlify function solves a distinct integration problem. The bus feed decodes <strong>GTFS-RT Protocol Buffers</strong> server-side, converting binary protobuf into clean JSON with CORS headers. The rail feed holds the MARTA API key in a secure environment variable, deduplicates arrival records into one canonical position per train, and surfaces lat/lon for map rendering. The static feed proxy caches a <strong>20MB GTFS zip</strong> in warm-instance memory for 6 hours, parsing 412,000+ shape points and 46,000+ trip records on demand.</p>
+      </div>
+
+      <div class="how-block">
+        <h3>Operational Scale &amp; Coverage</h3>
+        <ul class="how-list">
+          <li><strong>81 bus routes + 12 Reach zones</strong> tracked via GTFS-RT vehicle positions (protobuf-decoded)</li>
+          <li><strong>4 rail lines</strong> with hand-curated station polylines (38 stations)</li>
+          <li><strong>412,000+ shape points</strong> in the static GTFS feed, Douglas-Peucker simplified to ~2KB per route</li>
+          <li><strong>30-second polling cycle</strong> matching MARTA's upstream refresh cadence</li>
+          <li><strong>Server-side caching</strong>: 15s bus, 10s rail, 6h static feed — respectful of upstream rate limits</li>
+          <li><strong>Paratransit equity model</strong>: live hex-binned coverage estimation against ACS 5-year census tract populations</li>
+          <li>Built for MARTA's <strong>NextGen Bus Network</strong> (launched April 18, 2026) — route directory auto-refreshes on cold start</li>
+        </ul>
+      </div>
+
+      <div class="how-block">
+        <h3>Serverless Proxy Architecture</h3>
+        <p>Three <strong>Netlify Functions</strong> eliminate the need for a dedicated backend:</p>
+        <ul class="how-list">
+          <li><strong>bus-feed</strong> — Fetches MARTA's GTFS-RT protobuf endpoint, decodes with <code>gtfs-realtime-bindings</code>, returns structured JSON. Solves CORS and binary-format barriers simultaneously.</li>
+          <li><strong>rail-feed</strong> — Proxies MARTA's Rail RESTful API with the API key held server-side. Deduplicates per-station arrival rows into one record per train with nearest-arrival priority.</li>
+          <li><strong>gtfs-static</strong> — Downloads and caches the full GTFS zip. Serves a <strong>route directory</strong> (81 route IDs → friendly names) and <strong>per-route simplified GeoJSON</strong> via Douglas-Peucker line simplification (~5m tolerance). Reduces 84,000-point routes to &lt;2KB payloads.</li>
+        </ul>
+      </div>
+
+      <div class="how-block">
+        <h3>Visualization &amp; Interaction Design</h3>
+        <p><strong>MapLibre GL</strong> on Carto Dark Matter basemap (no API key required). Rail lines rendered as colored polylines with glow layers. Live trains displayed as directional arrow icons rotated by heading (N/S/E/W). Buses rendered as interactive dots — click any bus to fetch its full route shape from the static GTFS proxy, drawn as a gold dashed polyline. AI narrative bar synthesizes the current network snapshot: time of day, active vehicle counts, busiest rail line, and arriving-now tallies. Countdown ring uses SVG <code>stroke-dashoffset</code> animation for continuous sweep.</p>
+      </div>
+
+      <div class="how-block">
+        <h3>Equity Analysis Model</h3>
+        <p>The paratransit equity panel computes a <strong>live coverage estimate</strong> from active bus positions. Vehicle coordinates are binned into ~1km grid cells (census tract proxy), expanded by one ring of neighbors to simulate the <strong>¾-mile ADA paratransit buffer</strong>, then multiplied against mean ACS 5-year tract populations (~3,900 for the Atlanta region). Coverage ratio benchmarked against MARTA's 1.5M service-area population. The model exposes how coverage contracts during off-peak hours — a disparity that concentrates in South DeKalb, South Fulton, and Clayton County.</p>
+      </div>
+
+      <div class="how-block">
+        <h3>Cloud-Native Deployment Stack</h3>
+        <p>Single-command production deployment via <strong>Netlify CLI</strong>. Three serverless functions bundled with <strong>esbuild</strong>. Static assets served from Netlify's global CDN with instant cold-start performance. No framework overhead, no build pipeline dependencies. Built through an <strong>agentic AI workflow</strong> — the same rapid implementation model delivered to clients.</p>
+        <div class="how-tags">
+          <span>MapLibre GL</span><span>Netlify Functions</span><span>GTFS-RT</span><span>Protocol Buffers</span><span>Douglas-Peucker</span><span>JSZip</span><span>Carto Dark Matter</span><span>ACS Census Data</span>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+  <script src="/app.js"></script>
+</body>
+</html>
