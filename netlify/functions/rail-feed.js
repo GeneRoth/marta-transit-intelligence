@@ -1,7 +1,7 @@
 // Proxies MARTA's rail real-time arrivals JSON API.
 // API key is held server-side in MARTA_RAIL_KEY env var — never exposed to the browser.
 
-const BASE = 'https://developerservices.itsmarta.com:18096/itsmarta/railrealtimearrivals/developerservices/traindata';
+const BASE = 'https://developerservices.itsmarta.com/mcsmrail/itsmarta/railrealtimearrivals/developerservices/traindata';
 
 let cache = { ts: 0, payload: null };
 const CACHE_MS = 10000;
