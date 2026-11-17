@@ -11,9 +11,11 @@ var JSZip = require('jszip');
 // NOTE (Apr 18, 2026): MARTA's Azure Application Gateway appears to filter some requests —
 // curl and browsers work, but Netlify Functions (AWS us-east-1) intermittently get 500s.
 // Defenses below: (1) browser-style User-Agent, (2) explicit redirect: 'follow',
-// (3) try April18 URL first, fall back to main URL on failure, (4) one retry with delay.
+// (3) one retry with delay.
+// NOTE (Nov 16, 2026): the April18 pre-launch zip is no longer used. MARTA republished
+// google_transit.zip on Aug 18, 2026 with new route IDs (29130-29229); the live feed
+// reports those IDs, so the April18 zip (26903-27457) returned empty shapes for every bus.
 var ZIP_URLS = [
-  'https://itsmarta.com/google_transit_feed/April18_2026_google_transit.zip',
   'https://itsmarta.com/google_transit_feed/google_transit.zip',
 ];
 var ZIP_CACHE_MS = 6 * 60 * 60 * 1000;
